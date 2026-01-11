@@ -303,6 +303,12 @@ class MethodChannelCredentialManager extends CredentialManagerPlatform {
           message: "Passkey failed to fetch",
           details: e.details,
         );
+      case "6005":
+        return CredentialException(
+          code: 6005,
+          message: "Passkey already exists on this device",
+          details: e.details,
+        );
       default:
         return CredentialException(
           code: 504,

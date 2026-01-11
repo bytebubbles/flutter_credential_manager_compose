@@ -8,10 +8,14 @@ import androidx.credentials.exceptions.CreateCredentialException
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
+import androidx.credentials.exceptions.domerrors.InvalidStateError
+import androidx.credentials.exceptions.publickeycredential.CreatePublicKeyCredentialDomException
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
+import org.w3c.dom.DOMException.INVALID_STATE_ERR
+
 class CredentialManagerUtils {
 
     private lateinit var credentialManager: CredentialManager
@@ -156,6 +160,7 @@ class CredentialManagerUtils {
                 }
                 if (fetchOptions.passKeyOption && requestJson != null) {
                     addCredentialOption(GetPublicKeyCredentialOption(requestJson))
+                    setPreferImmediatelyAvailableCredentials(true)
                 }
                 if (fetchOptions.googleCredential) {
                     addCredentialOption(
@@ -370,13 +375,24 @@ class CredentialManagerUtils {
             )
         } catch (e: CreateCredentialException) {
             Log.d("CredentialTest", "Exception $e")
-            Pair(
-                CredentialManagerExceptions(
-                    code = 602,
-                    message = "Failed to create passkey credentials",
-                    details = e.localizedMessage
-                ), ""
-            )
+            if (e is CreatePublicKeyCredentialDomException && e.domError is InvalidStateError) {
+                Pair(
+                    CredentialManagerExceptions(
+                        code = 6005,
+                        message = "Passkey already exists on this device",
+                        details = e.localizedMessage
+                    ), ""
+                )
+            }else {
+                Pair(
+                    CredentialManagerExceptions(
+                        code = 602,
+                        message = "Failed to create passkey credentials",
+                        details = e.localizedMessage
+                    ), ""
+                )
+            }
+
         } catch (e: Exception) {
             Log.d("CredentialTest", "Exception $e")
             Pair(
